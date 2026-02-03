@@ -26,16 +26,14 @@ const ALLOWED_MIME_TYPES = [
 
 const fileFilter = (req, file, cb) => {
   const ext = path.extname(file.originalname).toLowerCase();
-  const mime = file.mimetype;
 
-  if (
-    !ALLOWED_EXTENSIONS.includes(ext) ||
-    !ALLOWED_MIME_TYPES.includes(mime)
-  ) {
-    return cb(
-      new Error("Unsupported file type. Only .docx and .pdf files are allowed."),
-      false
-    );
+  if (!ALLOWED_EXTENSIONS.includes(ext)) {
+    return cb(new Error("Unsupported file extension"), false);
+  }
+
+  // MIME hanya warning, bukan blocker
+  if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+    console.warn("⚠️ Non-standard MIME:", file.mimetype);
   }
 
   cb(null, true);
