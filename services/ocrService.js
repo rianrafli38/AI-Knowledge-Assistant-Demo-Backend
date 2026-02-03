@@ -1,11 +1,8 @@
-import { createWorker } from "tesseract.js";
+// services/ocrService.js
+import { getWorker } from "./ocr-Worker.js";
 
 export async function ocrImage(imagePath) {
-  const worker = await createWorker("eng");
-
+  const worker = await getWorker();
   const { data } = await worker.recognize(imagePath);
-
-  await worker.terminate();
-
   return data.text || "";
-}
+}L

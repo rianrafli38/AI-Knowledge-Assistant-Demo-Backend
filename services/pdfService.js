@@ -1,3 +1,4 @@
+// services/pdfService.js
 import { convert } from "pdf-poppler";
 import fs from "fs";
 import path from "path";
@@ -17,7 +18,12 @@ export async function pdfToImages(pdfPath) {
   });
 
   return fs
-    .readdirSync(outputDir)
-    .filter(f => f.endsWith(".png"))
-    .map(f => path.join(outputDir, f));
+  .readdirSync(outputDir)
+  .filter(f => f.endsWith(".png"))
+  .sort((a, b) => {
+    const na = parseInt(a.match(/\d+/)?.[0] || 0);
+    const nb = parseInt(b.match(/\d+/)?.[0] || 0);
+    return na - nb;
+  })
+  .map(f => path.join(outputDir, f));
 }

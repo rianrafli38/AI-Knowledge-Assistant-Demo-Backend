@@ -8,8 +8,8 @@ const openai = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
   defaultHeaders: {
     "HTTP-Referer": "http://localhost",
-    "X-Title": "AI Training Assistant"
-  }
+    "X-Title": "AI Training Assistant",
+  },
 });
 
 const supabase = createClient(
@@ -17,79 +17,92 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// OPTIMAL batch size for OpenAI embeddings
-const BATCH_SIZE = 80;
+// ============================
+// CONFIG
+// ============================
+const EMBEDDING_MODEL =
+  process.env.EMBEDDING_MODEL || "text-embedding-3-small";
 
-// MAX parallel workers
+const BATCH_SIZE = 80;
 const MAX_CONCURRENT = 3;
 
+// ============================
+// EMBED BATCH
+// ============================
 async function embedBatch(batch) {
+  if (!batch.length) return [];
+
   const res = await retry(() =>
     openai.embeddings.create({
-      model: "text-embedding-3-small",
-      input: batch
+      model: EMBEDDING_MODEL,
+      input: batch,
     })
   );
-  return res.data.map(d => d.embedding);
+
+  return res.data.map((d) => d.embedding);
 }
 
+// ============================
+// MAIN SERVICE
+// ============================
 exports.embedAndStore = async (chunks, meta = {}) => {
-  if (!chunks?.length) return;
+  if (!Array.isArray(chunks) || chunks.length === 0) return;
 
-  // 1) SPLIT into batches
+  // ============================
+  // 1. SPLIT INTO BATCHES
+  // ============================
   const batches = [];
   for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
     batches.push(chunks.slice(i, i + BATCH_SIZE));
   }
 
-  console.log(`📦 Total batches: ${batches.length}`);
+  console.log(`📦 Total embedding batches: ${batches.length}`);
 
-  // 2) PARALLEL worker pool
+  // ============================
+  // 2. WORKER POOL
+  // ============================
   let index = 0;
-  const allRows = [];
 
-  async function worker(id) {
+  async function worker(workerId) {
     while (index < batches.length) {
-      const i = index++;
-      const batch = batches[i];
+      const batchIndex = index++;
+      const batch = batches[batchIndex];
 
-      console.log(`⚡ Worker ${id} embedding batch ${i + 1}/${batches.length}`);
+      console.log(
+        `⚡ Worker ${workerId} embedding batch ${batchIndex + 1}/${batches.length}`
+      );
 
       const embeddings = await embedBatch(batch);
 
-      // Simpan sementara di memory
-      batch.forEach((text, idx) => {
-        allRows.push({
-          content: text,
-          embedding: embeddings[idx],
-          source: meta.source || "docx",
-          type: meta.type || "manual",
-          created_at: new Date()
-        });
-      });
+      const rows = batch.map((text, i) => ({
+        content: text,
+        embedding: embeddings[i],
+        source: meta.source || "docx",
+        type: meta.type || "manual",
+        job_id: meta.jobId || null,
+        created_at: new Date(),
+      }));
+
+      const res = await retry(() =>
+        supabase.from("documents").insert(rows)
+      );
+
+      if (res.error) {
+        console.error("❌ Supabase insert failed:", res.error);
+        throw res.error;
+      }
     }
   }
 
-  // Start workers
+  // ============================
+  // 3. START WORKERS
+  // ============================
   const workers = [];
-  for (let w = 1; w <= MAX_CONCURRENT; w++) {
-    workers.push(worker(w));
+  for (let i = 1; i <= MAX_CONCURRENT; i++) {
+    workers.push(worker(i));
   }
 
   await Promise.all(workers);
 
-  console.log(`🧩 Total embeddings generated: ${allRows.length}`);
-
-  // 3) BULK INSERT once
-  console.log("💾 Saving to Supabase (bulk insert)…");
-
-  const insertRes = await retry(() =>
-    supabase.from("documents").insert(allRows, { count: "exact" })
-  );
-
-  if (insertRes.error) {
-    console.error("❌ Supabase insert failed:", insertRes.error);
-  } else {
-    console.log(`✅ Stored ${allRows.length} rows to Supabase`);
-  }
+  console.log("✅ Embedding & storage completed");
 };
