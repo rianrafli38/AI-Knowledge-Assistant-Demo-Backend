@@ -44,7 +44,7 @@ Write a clear, concise summary that explains:
 - important procedures or rules
 
 Rules:
-- Use professional, simple English
+- Use professional, simple Indonesian language
 - 1–2 short paragraphs
 - No bullet points
 - No markdown
