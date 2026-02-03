@@ -1,5 +1,5 @@
 // services/ocrService.js
-const { getWorker } = require("./ocrWorker");
+const { getWorker } = require("./ocr-Worker");
 
 async function ocrImage(imagePath) {
   const worker = await getWorker();
