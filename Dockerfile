@@ -1,7 +1,7 @@
 # ============================
 # Base image (ringan & stabil)
 # ============================
-FROM node:18-slim
+FROM node:20-slim
 
 # ============================
 # Install system dependencies

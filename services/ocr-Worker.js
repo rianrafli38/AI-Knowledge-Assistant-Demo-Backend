@@ -1,22 +1,29 @@
-// services/ocrWorker.js
-import { createWorker } from "tesseract.js";
+// services/ocr-Worker.js
+const { createWorker } = require("tesseract.js");
 
-let worker;
+let worker = null;
 
-export async function getWorker() {
+async function getWorker() {
   if (!worker) {
     worker = await createWorker({
-      logger: () => {} // optional
+      logger: () => {} // optional, mute log
     });
+
     await worker.loadLanguage("eng");
     await worker.initialize("eng");
   }
+
   return worker;
 }
 
-export async function terminateWorker() {
+async function terminateWorker() {
   if (worker) {
     await worker.terminate();
     worker = null;
   }
 }
+
+module.exports = {
+  getWorker,
+  terminateWorker
+};
