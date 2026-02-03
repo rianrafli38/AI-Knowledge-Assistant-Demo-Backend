@@ -35,7 +35,7 @@ async function getContextSamples(limit = 10) {
 
 function buildSummaryPrompt(chunks) {
   return `
-You are summarizing internal company documents for new employees.
+You are summarizing internal company documents for people.
 
 Write a clear, concise summary that explains:
 - what the document is about
