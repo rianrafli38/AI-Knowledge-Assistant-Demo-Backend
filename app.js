@@ -38,18 +38,6 @@ app.use("/api", suggestionRoutes);
 app.use("/api", overviewRoutes);
 app.use("/api/jobs", jobRoutes);
 
-app.use((err, req, res, next) => {
-  console.error("🔥 Global error handler:", err);
 
-  if (err.message?.includes("Unsupported")) {
-    return res.status(400).json({ error: err.message });
-  }
-
-  if (err.code === "LIMIT_FILE_SIZE") {
-    return res.status(400).json({ error: "File too large" });
-  }
-
-  res.status(500).json({ error: "Internal server error" });
-});
 
 module.exports = app;
