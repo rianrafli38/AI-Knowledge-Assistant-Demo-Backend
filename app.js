@@ -19,27 +19,32 @@ const allowedOrigins = process.env.CORS_ORIGINS
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // allow server-to-server, curl, railway healthcheck
+    // allow server-to-server / curl / healthcheck
     if (!origin) return callback(null, true);
 
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
 
-    // ❗ PENTING: JANGAN throw error
+    // ❗ jangan throw error
     return callback(null, false);
   },
   methods: ["GET", "POST", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "x-admin-key"],
   credentials: false,
-  maxAge: 86400 // cache preflight 1 hari
+  maxAge: 86400
 };
 
-// ⬅️ HARUS PALING ATAS
+// ⬅️ PASANG PALING ATAS
 app.use(cors(corsOptions));
 
-// ⬅️ WAJIB untuk preflight
-app.options("*", cors(corsOptions));
+// ⬅️ HANDLE PREFLIGHT MANUAL (AMAN)
+app.use((req, res, next) => {
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+  next();
+});
 
 // ============================
 // BODY PARSER
@@ -61,15 +66,11 @@ app.use("/api/jobs", jobRoutes);
 app.use((err, req, res, next) => {
   console.error("🔥 Global error:", err);
 
-  // Multer / upload error
   if (err.message?.includes("Unsupported")) {
     return res.status(400).json({ error: err.message });
   }
 
-  // Default
-  res.status(500).json({
-    error: "Internal server error"
-  });
+  res.status(500).json({ error: "Internal server error" });
 });
 
 module.exports = app;
