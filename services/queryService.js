@@ -62,7 +62,7 @@ QUESTION:
 ${question}
 
 ANSWERING GUIDELINES:
-- Respond in clear, professional English
+- Respond in clear, professional indonesian.
 - Be concise but informative
 - Use bullet points if helpful
 - Do NOT mention “the context”, “the document”, or similar phrases
