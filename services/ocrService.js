@@ -1,4 +1,3 @@
-// services/ocrService.js
 const { getWorker } = require("./ocr-Worker");
 
 async function ocrImage(imagePath) {

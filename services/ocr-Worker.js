@@ -1,18 +1,13 @@
-// services/ocr-Worker.js
 const { createWorker } = require("tesseract.js");
 
 let worker = null;
 
 async function getWorker() {
   if (!worker) {
-    worker = await createWorker({
-      logger: () => {} // optional, mute log
-    });
-
+    worker = await createWorker();
     await worker.loadLanguage("eng");
     await worker.initialize("eng");
   }
-
   return worker;
 }
 
