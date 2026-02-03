@@ -33,7 +33,7 @@ const fileFilter = (req, file, cb) => {
     !ALLOWED_MIME_TYPES.includes(mime)
   ) {
     return cb(
-      new Error("Unsupported file type. Only .docx files are allowed."),
+      new Error("Unsupported file type. Only .docx and .pdf files are allowed."),
       false
     );
   }
