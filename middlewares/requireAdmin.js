@@ -1,8 +1,5 @@
 // middlewares/requireAdmin.js
 module.exports = function requireAdmin(req, res, next) {
-  if (req.method === "OPTIONS") {
-    return next(); // ⬅️ penting
-  }
 
   const key = req.headers["x-admin-key"];
 
