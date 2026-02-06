@@ -1,9 +1,14 @@
-const { getWorker } = require("./ocr-Worker");
+// services/ocrService.js
+const { ocrImage } = require("./ocr-Worker");
 
-async function ocrImage(imagePath) {
-  const worker = await getWorker();
-  const { data } = await worker.recognize(imagePath);
-  return data.text || "";
+/**
+ * OCR satu gambar
+ * Worker management ditangani sepenuhnya oleh ocrWorker (pool)
+ */
+async function runOcr(imagePath) {
+  return await ocrImage(imagePath);
 }
 
-module.exports = { ocrImage };
+module.exports = {
+  ocrImage: runOcr
+};

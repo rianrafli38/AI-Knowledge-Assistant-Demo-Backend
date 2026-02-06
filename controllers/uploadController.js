@@ -1,5 +1,5 @@
 // controllers/uploadController.js
-const { ingestDocx } = require("../services/ingestService");
+const { ingestDocx } = require("../services/ingestDocx");
 const { ingestPdf } = require("../services/ingestPdf");
 const { createJob } = require("../services/jobStore");
 const path = require("path");

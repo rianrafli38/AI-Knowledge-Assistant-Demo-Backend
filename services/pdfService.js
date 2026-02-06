@@ -1,34 +1,59 @@
-const { exec } = require("child_process");
+// services/pdfService.js
+const { spawn } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 
 function pdfToImages(pdfPath) {
   return new Promise((resolve, reject) => {
-    const outputDir = pdfPath.replace(".pdf", "_pages");
+    const { dir, name } = path.parse(pdfPath);
+    const outputDir = path.join(dir, `${name}_pages`);
 
+    // pastikan folder ada
     if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir);
+      fs.mkdirSync(outputDir, { recursive: true });
     }
 
     const outputPrefix = path.join(outputDir, "page");
 
-    // poppler native tool
-    const cmd = `pdftoppm -png "${pdfPath}" "${outputPrefix}"`;
+    // gunakan spawn (AMAN untuk file besar)
+    const proc = spawn("pdftoppm", [
+      "-png",
+      pdfPath,
+      outputPrefix
+    ]);
 
-    exec(cmd, (err) => {
-      if (err) return reject(err);
+    proc.on("error", (err) => {
+      reject(err);
+    });
 
-      const files = fs
-        .readdirSync(outputDir)
-        .filter(f => f.endsWith(".png"))
-        .sort((a, b) => {
-          const na = parseInt(a.match(/\d+/)?.[0] || 0);
-          const nb = parseInt(b.match(/\d+/)?.[0] || 0);
-          return na - nb;
-        })
-        .map(f => path.join(outputDir, f));
+    proc.on("close", (code) => {
+      if (code !== 0) {
+        return reject(
+          new Error(`pdftoppm exited with code ${code}`)
+        );
+      }
 
-      resolve(files);
+      try {
+        const files = fs
+          .readdirSync(outputDir)
+          .filter(f => f.endsWith(".png"))
+          .sort((a, b) => {
+            const na = parseInt(a.match(/\d+/)?.[0] || 0);
+            const nb = parseInt(b.match(/\d+/)?.[0] || 0);
+            return na - nb;
+          })
+          .map(f => path.join(outputDir, f));
+
+        if (!files.length) {
+          return reject(
+            new Error("No images generated from PDF")
+          );
+        }
+
+        resolve(files);
+      } catch (err) {
+        reject(err);
+      }
     });
   });
 }
