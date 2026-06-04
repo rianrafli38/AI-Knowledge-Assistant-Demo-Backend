@@ -20,11 +20,11 @@ const supabase = createClient(
    CORE QUESTIONS (stable anchors)
 ============================ */
 const CORE_QUESTIONS = [
-  "Apa saja tanggung jawab utama yang dijelaskan dalam dokumen ini?",
-  "Prosedur apa yang harus diikuti?",
-  "Siapa yang bertanggung jawab untuk implementasi?",
-  "Aturan atau persyaratan apa yang berlaku?",
-  "Dokumen atau persetujuan apa yang diperlukan?"
+  "What are the key responsibilities outlined in this document?",
+  "What procedures must be followed?",
+  "Who is responsible for implementation?",
+  "What rules or requirements apply?",
+  "What documents or approvals are required?"
 ];
 
 /* ============================
