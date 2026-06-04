@@ -75,6 +75,7 @@ Your task:
 2. Convert each statement into a natural question that could be asked by an employee.
 
 IMPORTANT RULES:
+- Use professional, simple English language
 - Every question MUST be directly answerable from the text.
 - Do NOT invent topics.
 - Do NOT generalize beyond the content.
