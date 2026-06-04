@@ -44,7 +44,7 @@ Write a clear, concise summary that explains:
 - important procedures or rules
 
 Rules:
-- Use professional, simple English language
+- Use professional, simple Indonesian language
 - 1–2 short paragraphs
 - No bullet points
 - No markdown
@@ -69,7 +69,7 @@ exports.generateSummary = async () => {
   const chunks = await getContextSamples(10);
 
   if (!chunks.length) {
-    return "No document content is available yet.";
+    return "Tidak ada konten dokumen yang tersedia.";
   }
 
   const prompt = buildSummaryPrompt(chunks);
