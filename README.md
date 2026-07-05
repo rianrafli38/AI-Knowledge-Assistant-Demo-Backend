@@ -102,3 +102,11 @@ This repository represents the backend implementation of an AI Knowledge Assista
 AI & Full-Stack Developer
 
 🌐 Portfolio: https://zenythx.com & https://demo.zenythx.com
+
+## 💡 Why This Project?
+
+Organizations already have valuable knowledge stored in documents.
+
+The challenge is not creating knowledge, but finding it when it's needed.
+
+This project enables employees to ask questions in natural language and receive instant answers grounded in their organization's own documents, reducing time spent searching and improving knowledge accessibility.
