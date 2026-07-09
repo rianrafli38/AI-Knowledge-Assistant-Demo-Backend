@@ -24,10 +24,6 @@ async function retrieveContext(question, k = 5) {
     input: question
   });
 
-  if (!emb.data?.length) {
-    throw new Error("Embedding gagal dibuat.");
-  }
-
   const embedding = emb.data[0].embedding;
 
   const { data, error } = await supabase.rpc("match_documents", {
@@ -37,54 +33,46 @@ async function retrieveContext(question, k = 5) {
 
   if (error) throw error;
 
-  return data || [];
+  return data;
 }
 
 /**
  * Bangun prompt RAG dengan Chain of Thought dan Sitasi Hukum Ketat
  */
 function buildPrompt(contextChunks, question) {
+  // Menggabungkan konten sekaligus menyertakan sumber dokumen/metadata agar AI tahu asal undang-undang/kontraknya
   const contextText = contextChunks
     .map((c, i) => {
       const sourceName = c.file_name || c.title || "Dokumen Referensi";
-      const content = (c.content || "").trim();
-
-      return `[SUMBER ${i + 1}: ${sourceName}]
-${content}`;
+      // FIX: Sudah dibungkus dengan backtick (`) yang benar
+      return `[SUMBER ${i + 1}: ${sourceName}]\n${c.content}`;
     })
     .join("\n\n---\n\n");
 
   return `
-Kamu adalah seorang Corporate Legal Expert dan Partner Hukum Senior di Indonesia.
-
-Tugasmu adalah memberikan legal opinion yang akurat berdasarkan dokumen yang diberikan.
+Kamu adalah seorang Corporate Legal Expert dan Partner Hukum Senior di Indonesia yang sangat teliti, kritis, dan berbasis data. Tugasmu adalah menganalisis dokumen hukum dan menjawab pertanyaan pengguna dengan standar legal opinion yang tinggi.
 
 ====================
-KONTEKS DOKUMEN
-====================
-
+KONTEKS DOKUMEN:
 ${contextText}
-
-====================
-PERTANYAAN
 ====================
 
+PERTANYAAN:
 ${question}
 
-INSTRUKSI:
+PROSES BERPIKIR (CHAIN OF THOUGHT):
+Sebelum memberikan jawaban akhir, kamu WAJIB melakukan penalaran hukum secara internal dengan langkah berikut:
+1. Identifikasi inti masalah hukum dari PERTANYAAN.
+2. Cari klausul, undang-undang, nomor peraturan, pasal, dan ayat yang relevan di dalam KONTEKS DOKUMEN.
+3. Hubungkan logika antara aturan hukum tersebut dengan fakta yang ditanyakan.
+4. Tuliskan analisis hukum secara runut sebelum menyimpulkan.
 
-- Analisis pertanyaan secara menyeluruh sebelum menjawab.
-- Gunakan HANYA informasi yang terdapat pada dokumen di atas.
-- Jangan menggunakan pengetahuan di luar dokumen.
-- Setiap kesimpulan HARUS menyebutkan sumbernya.
-
-Format sitasi:
-
-(Pasal 5 ayat (2) [UU Nomor 40 Tahun 2007] - SUMBER 2)
-
-Jika informasi tidak ditemukan dalam dokumen, katakan dengan tegas bahwa informasi tersebut tidak tersedia pada dokumen referensi.
-
-Jangan tampilkan proses berpikir atau reasoning internal. Tampilkan hanya hasil analisis akhir yang runtut, profesional, dan mudah dipahami.
+PANDUAN MENJAWAB (ANSWERING GUIDELINES):
+- JAWABAN MENDALAM & KOMPREHENSIF: Jangan memberikan jawaban ringkas, umum, atau normatif. Bedah setiap aspek hukum secara mendetail dan tajam.
+- SITASI HUKUM MUTLAK & KETAT: Setiap argumen, pasal, atau ayat yang kamu sebutkan WAJIB menyertakan dari dokumen mana informasi tersebut diambil dengan format formal. 
+  Contoh format: "...berdasarkan Pasal X Ayat Y [Nama Dokumen/UU] yang terdapat pada [SUMBER Z]..."
+- DETEKSI RISIKO & MITIGASI: Jika ada indikasi celah hukum, breakdown potensi kerugian, sanksi, atau risiko litigasi secara tajam, lalu berikan saran mitigasinya.
+- JIKA TIDAK ADA DI KONTEKS: Jika dokumen tidak memuat informasi spesifik yang dicari, katakan dengan tegas bahwa informasi tersebut tidak ditemukan dalam dokumen referensi yang tersedia. Jangan berasumsi atau membuat analogi hukum sendiri.
 `;
 }
 
