@@ -18,11 +18,15 @@ const supabase = createClient(
 /**
  * Cari konteks relevan dari Supabase
  */
-async function retrieveContext(question, k = 7) {
+async function retrieveContext(question, k = 5) {
   const emb = await openai.embeddings.create({
     model: "text-embedding-3-small",
     input: question
   });
+
+  if (!emb.data?.length) {
+    throw new Error("Embedding gagal dibuat.");
+  }
 
   const embedding = emb.data[0].embedding;
 
@@ -33,35 +37,54 @@ async function retrieveContext(question, k = 7) {
 
   if (error) throw error;
 
-  return data;
+  return data || [];
 }
 
 /**
- * Bangun prompt RAG yang tidak kaku
+ * Bangun prompt RAG dengan Chain of Thought dan Sitasi Hukum Ketat
  */
 function buildPrompt(contextChunks, question) {
   const contextText = contextChunks
-    .map((c, i) => `(${i + 1}) ${c.content}`)
-    .join("\n\n");
+    .map((c, i) => {
+      const sourceName = c.file_name || c.title || "Dokumen Referensi";
+      const content = (c.content || "").trim();
+
+      return `[SUMBER ${i + 1}: ${sourceName}]
+${content}`;
+    })
+    .join("\n\n---\n\n");
 
   return `
-Kamu adalah seorang Corporate Legal Expert dan Partner Hukum Senior yang sangat teliti, kritis, dan berbasis data. 
+Kamu adalah seorang Corporate Legal Expert dan Partner Hukum Senior di Indonesia.
 
-Tugasmu adalah menganalisis dokumen hukum yang diberikan melalui konteks dan menjawab pertanyaan pengguna dengan standar profesional yang tinggi.
+Tugasmu adalah memberikan legal opinion yang akurat berdasarkan dokumen yang diberikan.
 
 ====================
-CONTEXT:
+KONTEKS DOKUMEN
+====================
+
 ${contextText}
+
+====================
+PERTANYAAN
 ====================
 
-QUESTION:
 ${question}
 
-ANSWERING GUIDELINES:
-- JAWABAN MENDALAM & SPESIFIK: Jangan memberikan jawaban umum atau ringkas. Bedah setiap poin masalah secara komprehensif.
-- BERBASIS BUKTI (DOCK-BASED): Setiap argumen atau analisis yang kamu berikan WAJIB merujuk langsung pada nomor pasal, ayat, nama klausul, atau bagian spesifik yang ada di dalam dokumen konteks.
-- DETEKSI RISIKO: Jika pertanyaan menanyakan tentang risiko atau implikasi, breakdown potensi kerugian atau celah hukumnya secara tajam.
-- JIKA TIDAK ADA: Jika informasi yang ditanyakan tidak tercantum di dalam dokumen konteks, katakan dengan tegas bahwa informasi tersebut tidak ditemukan di dalam berkas terkait, jangan berasumsi atau mengarang.
+INSTRUKSI:
+
+- Analisis pertanyaan secara menyeluruh sebelum menjawab.
+- Gunakan HANYA informasi yang terdapat pada dokumen di atas.
+- Jangan menggunakan pengetahuan di luar dokumen.
+- Setiap kesimpulan HARUS menyebutkan sumbernya.
+
+Format sitasi:
+
+(Pasal 5 ayat (2) [UU Nomor 40 Tahun 2007] - SUMBER 2)
+
+Jika informasi tidak ditemukan dalam dokumen, katakan dengan tegas bahwa informasi tersebut tidak tersedia pada dokumen referensi.
+
+Jangan tampilkan proses berpikir atau reasoning internal. Tampilkan hanya hasil analisis akhir yang runtut, profesional, dan mudah dipahami.
 `;
 }
 
