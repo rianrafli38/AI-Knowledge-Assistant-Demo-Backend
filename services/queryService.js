@@ -18,7 +18,7 @@ const supabase = createClient(
 /**
  * Cari konteks relevan dari Supabase
  */
-async function retrieveContext(question, k = 5) {
+async function retrieveContext(question, k = 7) {
   const emb = await openai.embeddings.create({
     model: "text-embedding-3-small",
     input: question
@@ -37,42 +37,31 @@ async function retrieveContext(question, k = 5) {
 }
 
 /**
- * Bangun prompt RAG dengan Chain of Thought dan Sitasi Hukum Ketat
+ * Bangun prompt RAG yang tidak kaku
  */
 function buildPrompt(contextChunks, question) {
-  // Menggabungkan konten sekaligus menyertakan sumber dokumen/metadata agar AI tahu asal undang-undang/kontraknya
   const contextText = contextChunks
-    .map((c, i) => {
-      const sourceName = c.file_name || c.title || "Dokumen Referensi";
-      // FIX: Sudah dibungkus dengan backtick (`) yang benar
-      return `[SUMBER ${i + 1}: ${sourceName}]\n${c.content}`;
-    })
-    .join("\n\n---\n\n");
+    .map((c, i) => `(${i + 1}) ${c.content}`)
+    .join("\n\n");
 
   return `
-Kamu adalah seorang Corporate Legal Expert dan Partner Hukum Senior di Indonesia yang sangat teliti, kritis, dan berbasis data. Tugasmu adalah menganalisis dokumen hukum dan menjawab pertanyaan pengguna dengan standar legal opinion yang tinggi.
+Kamu adalah seorang Corporate Legal Expert dan Partner Hukum Senior yang sangat teliti, kritis, dan berbasis data. 
+
+Tugasmu adalah menganalisis dokumen hukum yang diberikan melalui konteks dan menjawab pertanyaan pengguna dengan standar profesional yang tinggi.
 
 ====================
-KONTEKS DOKUMEN:
+CONTEXT:
 ${contextText}
 ====================
 
-PERTANYAAN:
+QUESTION:
 ${question}
 
-PROSES BERPIKIR (CHAIN OF THOUGHT):
-Sebelum memberikan jawaban akhir, kamu WAJIB melakukan penalaran hukum secara internal dengan langkah berikut:
-1. Identifikasi inti masalah hukum dari PERTANYAAN.
-2. Cari klausul, undang-undang, nomor peraturan, pasal, dan ayat yang relevan di dalam KONTEKS DOKUMEN.
-3. Hubungkan logika antara aturan hukum tersebut dengan fakta yang ditanyakan.
-4. Tuliskan analisis hukum secara runut sebelum menyimpulkan.
-
-PANDUAN MENJAWAB (ANSWERING GUIDELINES):
-- JAWABAN MENDALAM & KOMPREHENSIF: Jangan memberikan jawaban ringkas, umum, atau normatif. Bedah setiap aspek hukum secara mendetail dan tajam.
-- SITASI HUKUM MUTLAK & KETAT: Setiap argumen, pasal, atau ayat yang kamu sebutkan WAJIB menyertakan dari dokumen mana informasi tersebut diambil dengan format formal. 
-  Contoh format: "...berdasarkan Pasal X Ayat Y [Nama Dokumen/UU] yang terdapat pada [SUMBER Z]..."
-- DETEKSI RISIKO & MITIGASI: Jika ada indikasi celah hukum, breakdown potensi kerugian, sanksi, atau risiko litigasi secara tajam, lalu berikan saran mitigasinya.
-- JIKA TIDAK ADA DI KONTEKS: Jika dokumen tidak memuat informasi spesifik yang dicari, katakan dengan tegas bahwa informasi tersebut tidak ditemukan dalam dokumen referensi yang tersedia. Jangan berasumsi atau membuat analogi hukum sendiri.
+ANSWERING GUIDELINES:
+- JAWABAN MENDALAM & SPESIFIK: Jangan memberikan jawaban umum atau ringkas. Bedah setiap poin masalah secara komprehensif.
+- BERBASIS BUKTI (DOCK-BASED): Setiap argumen atau analisis yang kamu berikan WAJIB merujuk langsung pada nomor pasal, ayat, nama klausul, atau bagian spesifik yang ada di dalam dokumen konteks.
+- DETEKSI RISIKO: Jika pertanyaan menanyakan tentang risiko atau implikasi, breakdown potensi kerugian atau celah hukumnya secara tajam.
+- JIKA TIDAK ADA: Jika informasi yang ditanyakan tidak tercantum di dalam dokumen konteks, katakan dengan tegas bahwa informasi tersebut tidak ditemukan di dalam berkas terkait, jangan berasumsi atau mengarang.
 `;
 }
 
