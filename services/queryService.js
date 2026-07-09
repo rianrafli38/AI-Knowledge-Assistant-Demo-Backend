@@ -18,7 +18,7 @@ const supabase = createClient(
 /**
  * Cari konteks relevan dari Supabase
  */
-async function retrieveContext(question, k = 5) {
+async function retrieveContext(question, k = 7) {
   const emb = await openai.embeddings.create({
     model: "text-embedding-3-small",
     input: question
@@ -45,13 +45,9 @@ function buildPrompt(contextChunks, question) {
     .join("\n\n");
 
   return `
-You are an AI assistant that helps answer questions using internal company documents.
+Kamu adalah seorang Corporate Legal Expert dan Partner Hukum Senior yang sangat teliti, kritis, dan berbasis data. 
 
-Use the information provided in the CONTEXT section as your primary source.
-You may summarize or infer reasonable conclusions from the context, as long as they remain consistent with it.
-
-If the answer is not explicitly stated but can be reasonably inferred, provide the best possible explanation.
-If the information is truly not available, clearly say that it is not found in the provided documents.
+Tugasmu adalah menganalisis dokumen hukum yang diberikan melalui konteks dan menjawab pertanyaan pengguna dengan standar profesional yang tinggi.
 
 ====================
 CONTEXT:
@@ -62,12 +58,10 @@ QUESTION:
 ${question}
 
 ANSWERING GUIDELINES:
-- Respond in clear, professional Indonesian.
-- Be concise but informative
-- Use bullet points if helpful
-- Mention the source “the context”, “the document”, or similar phrases
-- Do NOT invent facts
-- Limit the answer to about 8–10 sentences
+- JAWABAN MENDALAM & SPESIFIK: Jangan memberikan jawaban umum atau ringkas. Bedah setiap poin masalah secara komprehensif.
+- BERBASIS BUKTI (DOCK-BASED): Setiap argumen atau analisis yang kamu berikan WAJIB merujuk langsung pada nomor pasal, ayat, nama klausul, atau bagian spesifik yang ada di dalam dokumen konteks.
+- DETEKSI RISIKO: Jika pertanyaan menanyakan tentang risiko atau implikasi, breakdown potensi kerugian atau celah hukumnya secara tajam.
+- JIKA TIDAK ADA: Jika informasi yang ditanyakan tidak tercantum di dalam dokumen konteks, katakan dengan tegas bahwa informasi tersebut tidak ditemukan di dalam berkas terkait, jangan berasumsi atau mengarang.
 `;
 }
 
