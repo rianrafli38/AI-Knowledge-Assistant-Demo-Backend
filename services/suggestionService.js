@@ -20,11 +20,11 @@ const supabase = createClient(
    CORE QUESTIONS (stable anchors)
 ============================ */
 const CORE_QUESTIONS = [
-  "What are the key responsibilities outlined in this document?",
-  "What procedures must be followed?",
-  "Who is responsible for implementation?",
-  "What rules or requirements apply?",
-  "What documents or approvals are required?"
+  "Apa saja hak dan kewajiban utama para pihak yang diatur dalam dokumen ini?",
+  "Sebutkan pasal atau klausul apa saja yang mengatur tentang sanksi, denda, atau penalti?",
+  "Apakah ada klausul mengenai penyelesaian sengketa (dispute resolution) dan di mana forum hukumnya?",
+  "Identifikasi celah hukum (loophole) atau risiko mitigasi terbesar yang ada dalam dokumen ini.",
+  "Tolong buatkan ringkasan (summary) eksekutif dari seluruh dokumen ini dalam bentuk poin-poin penting beserta rujukan pasalnya."
 ];
 
 /* ============================
