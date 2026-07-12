@@ -1,4 +1,5 @@
 // services/ingestService.js
+const path = require("path");
 const { extractDocxText } = require("./docxService");
 const { logJob, updateJob } = require("./jobStore");
 const { runIngestPipeline } = require("./ingestPipeline");
@@ -18,7 +19,7 @@ exports.ingestDocx = async (filePath, jobId) => {
     // ============================
     await runIngestPipeline({
       text: rawText,
-      source: filePath,
+      source: path.basename(filePath),
       type: "docx",
       jobId,
     });

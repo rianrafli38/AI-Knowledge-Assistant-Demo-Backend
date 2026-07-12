@@ -1,4 +1,5 @@
 // services/ingestPdf.js
+const path = require("path");
 const { extractPdfText } = require("./pdfTextService"); // text-based PDF
 const { pdfToImages } = require("./pdfService");        // image conversion
 const { ocrImage } = require("./ocrService");
@@ -56,7 +57,9 @@ exports.ingestPdf = async (filePath, jobId) => {
 
         logJob(jobId, `OCR halaman ${i + 1}/${images.length}`);
         const text = await ocrImage(images[i]);
-        combinedText += "\n" + text;
+        // Sisipkan penanda halaman di awal teks hasil OCR tiap halaman
+        combinedText += `\n[PAGE_${i + 1}]\n` + text;
+
       }
 
       extractedText = combinedText;
@@ -74,7 +77,7 @@ exports.ingestPdf = async (filePath, jobId) => {
 
     await runIngestPipeline({
       text: extractedText,
-      source: filePath,
+      source: path.basename(filePath),
       type: usedOCR ? "pdf_ocr" : "pdf_text",
       jobId,
     });
