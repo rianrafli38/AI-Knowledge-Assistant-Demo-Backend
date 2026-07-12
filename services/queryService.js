@@ -40,12 +40,14 @@ async function retrieveContext(question, k = 5) {
  * Bangun prompt RAG dengan Chain of Thought dan Sitasi Hukum Ketat
  */
 function buildPrompt(contextChunks, question) {
-  // Menggabungkan konten sekaligus menyertakan sumber dokumen/metadata agar AI tahu asal undang-undang/kontraknya
+  // Menggabungkan konten dengan menyuntikkan nama file asli (source) dan nomor halaman (page_number)
   const contextText = contextChunks
-    .map((c, i) => {
-      const sourceName = c.file_name || c.title || "Dokumen Referensi";
-      // FIX: Sudah dibungkus dengan backtick (`) yang benar
-      return `[SUMBER ${i + 1}: ${sourceName}]\n${c.content}`;
+    .map((c) => {
+      // Ambil dari properti 'source' yang sudah berisi nama file asli, dan 'page_number'
+      const docName = c.source || "Dokumen Referensi";
+      const pageNum = c.page_number && c.page_number !== 0 ? `Halaman ${c.page_number}` : "Halaman tidak tertera";
+      
+      return `[DOKUMEN: ${docName} | ${pageNum}]\n${c.content}`;
     })
     .join("\n\n---\n\n");
 
@@ -69,12 +71,14 @@ Sebelum memberikan jawaban akhir, kamu WAJIB melakukan penalaran hukum secara in
 
 PANDUAN MENJAWAB (ANSWERING GUIDELINES):
 - JAWABAN MENDALAM & KOMPREHENSIF: Jangan memberikan jawaban ringkas, umum, atau normatif. Bedah setiap aspek hukum secara mendetail dan tajam.
-- SITASI HUKUM MUTLAK & KETAT: Setiap argumen, pasal, atau ayat yang kamu sebutkan WAJIB menyertakan dari dokumen mana informasi tersebut diambil dengan format formal. 
-  Contoh format: "...berdasarkan Pasal X Ayat Y [Nama Dokumen/UU] yang terdapat pada [SUMBER Z]..."
+- SITASI HUKUM MUTLAK & KETAT: Setiap argumen, pasal, atau ayat yang kamu sebutkan WAJIB menyertakan dari dokumen mana informasi tersebut diambil berdasarkan tag DOKUMEN dan HALAMAN yang tertera di konteks.
+  *DILARANG KERAS menggunakan label generik buatan sendiri seperti "[Sumber 1]", "[Sumber 2]", atau "[Sumber Z]".*
+  Contoh format sitasi yang benar: "...berdasarkan Pasal X Ayat Y (Nama_Undang_Undang.pdf, Halaman Z)..."
 - DETEKSI RISIKO & MITIGASI: Jika ada indikasi celah hukum, breakdown potensi kerugian, sanksi, atau risiko litigasi secara tajam, lalu berikan saran mitigasinya.
 - JIKA TIDAK ADA DI KONTEKS: Jika dokumen tidak memuat informasi spesifik yang dicari, katakan dengan tegas bahwa informasi tersebut tidak ditemukan dalam dokumen referensi yang tersedia. Jangan berasumsi atau membuat analogi hukum sendiri.
 `;
 }
+
 
 /**
  * MAIN QUERY FUNCTION
