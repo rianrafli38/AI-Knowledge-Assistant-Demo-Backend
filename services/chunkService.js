@@ -18,15 +18,10 @@ function update(stage, percent) {
 exports.chunkDocument = (rawText) => {
   if (!rawText || typeof rawText !== "string") return [];
 
-  // =========================================
-  // 1. CLEANING TEXT
-  // =========================================
   update("cleaning_text", 5);
+  // PENTING: Jangan hapus tag [PAGE_X] di dalam cleanText milikmu ya!
   const text = cleanText(rawText).trim();
 
-  // =========================================
-  // 2. PARAGRAPH SPLITTING
-  // =========================================
   update("splitting_paragraphs", 10);
   const paragraphs = text
     .split(/\n\s*\n+/)
@@ -35,18 +30,26 @@ exports.chunkDocument = (rawText) => {
 
   const MAX = 900;
   const MIN = 25;
-  let chunks = [];
+  let chunks = []; // SEKARANG BERISI OBJEK: { text: string, page: number }
 
-  // =========================================
-  // 3. MAIN PARAGRAPH CHUNKING
-  // =========================================
+  let currentPage = 1; // Default page tracker
+
+  // REGEX untuk mendeteksi penanda halaman, misal: [PAGE_12]
+  const pageRegex = /\[PAGE_(\d+)\]/i;
+
   paragraphs.forEach((p, idx) => {
     const percent = 10 + Math.round((idx / paragraphs.length) * 40);
     update("chunking_paragraphs", percent);
 
-    // === short paragraph ===
+    // Cek apakah paragraf ini mengandung penanda halaman baru
+    const match = p.match(pageRegex);
+    if (match) {
+      currentPage = parseInt(match[1], 10);
+      p = p.replace(pageRegex, "").trim(); // Bersihkan tag-nya agar tidak ikut di-embed
+    }
+
     if (p.length <= MAX) {
-      if (p.length >= MIN) chunks.push(p);
+      if (p.length >= MIN) chunks.push({ text: p, page: currentPage });
       return;
     }
 
@@ -57,51 +60,58 @@ exports.chunkDocument = (rawText) => {
     for (const s of sentences) {
       const next = buffer ? buffer + " " + s : s;
       if (next.length > MAX) {
-        if (buffer.length >= MIN) chunks.push(buffer.trim());
+        if (buffer.length >= MIN) chunks.push({ text: buffer.trim(), page: currentPage });
         buffer = s;
       } else {
         buffer = next;
       }
     }
 
-    if (buffer.length >= MIN) chunks.push(buffer.trim());
+    if (buffer.length >= MIN) chunks.push({ text: buffer.trim(), page: currentPage });
   });
 
   // =========================================
-  // 4. MICRO WINDOW (small overlap, not explosion)
+  // 4. MICRO WINDOW (Sesuaikan agar simpan halaman juga)
   // =========================================
   update("micro_window", 55);
-
   const micro = [];
   const W = 200;
   const O = 50;
 
   let pos = 0;
+  let microPage = 1;
+
   while (pos < text.length) {
     const slice = text.slice(pos, pos + W).trim();
-    if (slice.length >= MIN) micro.push(slice);
+    
+    // Deteksi halaman terdekat di slice micro window
+    const match = slice.match(pageRegex);
+    if (match) microPage = parseInt(match[1], 10);
+    
+    const cleanSlice = slice.replace(pageRegex, "").trim();
+
+    if (cleanSlice.length >= MIN) {
+      micro.push({ text: cleanSlice, page: microPage });
+    }
     pos += W - O;
   }
 
-  // =========================================
-  // 5. MERGE & DEDUP
-  // =========================================
   update("merging_chunks", 65);
-
   const all = [...chunks, ...micro];
 
-  // Dedup fastest way
-  const final = Array.from(new Set(all));
+  // Dedup objek berdasarkan teksnya
+  const seen = new Set();
+  const final = all.filter((item) => {
+    const duplicate = seen.has(item.text);
+    seen.add(item.text);
+    return !duplicate;
+  });
 
-  // =========================================
-  // 6. HARD LIMIT (keep system fast)
-  // =========================================
   update("finalizing", 75);
-
   const HARD_CAP = 180;
   const trimmed = final.slice(0, HARD_CAP);
 
   update("chunking_complete", 80);
 
-  return trimmed;
+  return trimmed; // Mengembalikan: Array<{ text: string, page: number }>
 };
