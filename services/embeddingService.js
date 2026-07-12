@@ -45,12 +45,11 @@ async function embedBatch(batch) {
 // ============================
 // MAIN SERVICE
 // ============================
+// Cukup ubah di fungsi MAIN SERVICE ini, kawan:
 exports.embedAndStore = async (chunks, meta = {}) => {
   if (!Array.isArray(chunks) || chunks.length === 0) return;
 
-  // ============================
   // 1. SPLIT INTO BATCHES
-  // ============================
   const batches = [];
   for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
     batches.push(chunks.slice(i, i + BATCH_SIZE));
@@ -58,9 +57,6 @@ exports.embedAndStore = async (chunks, meta = {}) => {
 
   console.log(`📦 Total embedding batches: ${batches.length}`);
 
-  // ============================
-  // 2. WORKER POOL
-  // ============================
   let index = 0;
 
   async function worker(workerId) {
@@ -68,19 +64,22 @@ exports.embedAndStore = async (chunks, meta = {}) => {
       const batchIndex = index++;
       const batch = batches[batchIndex];
 
-      console.log(
-        `⚡ Worker ${workerId} embedding batch ${batchIndex + 1}/${batches.length}`
-      );
+      console.log(`⚡ Worker ${workerId} embedding batch ${batchIndex + 1}/${batches.length}`);
 
-      const embeddings = await embedBatch(batch);
+      // Ekstrak teks mentahnya saja untuk dikirim ke OpenAI API
+      const textInputs = batch.map(c => c.text);
+      const embeddings = await embedBatch(textInputs);
 
-      const rows = batch.map((text, i) => ({
-        content: text,
-        embedding: embeddings[i],
+      // Map rows dengan metadata halaman dinamis per chunk!
+      const rows = batch.map((chunkObj, i) => ({
+        content: chunkObj.text,          // teks asli
+        embedding: embeddings[i],       // vektor matematika
         source: meta.source || "docx",
         type: meta.type || "manual",
         job_id: meta.jobId || null,
         created_at: new Date(),
+        // PENTING: Tambahkan kolom ini di tabel Supabase-mu (atau masukkan ke kolom JSON metadata)
+        page_number: chunkObj.page       
       }));
 
       const res = await retry(() =>
@@ -94,15 +93,11 @@ exports.embedAndStore = async (chunks, meta = {}) => {
     }
   }
 
-  // ============================
-  // 3. START WORKERS
-  // ============================
   const workers = [];
   for (let i = 1; i <= MAX_CONCURRENT; i++) {
     workers.push(worker(i));
   }
 
   await Promise.all(workers);
-
-  console.log("✅ Embedding & storage completed");
+  console.log("✅ Embedding & storage completed dengan sukses!");
 };
