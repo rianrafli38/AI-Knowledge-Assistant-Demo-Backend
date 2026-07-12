@@ -9,7 +9,7 @@ const { runIngestPipeline } = require("./ingestPipeline");
 
 const MIN_TEXT_THRESHOLD = 500; // karakter minimum dianggap "text-based"
 
-exports.ingestPdf = async (filePath, jobId) => {
+exports.ingestPdf = async (filePath, jobId, originalName) => {
   try {
     // ============================
     // 1️⃣ Try TEXT extraction first
@@ -77,7 +77,7 @@ exports.ingestPdf = async (filePath, jobId) => {
 
     await runIngestPipeline({
       text: extractedText,
-      source: path.basename(filePath),
+      source: originalName || path.basename(filePath),
       type: usedOCR ? "pdf_ocr" : "pdf_text",
       jobId,
     });

@@ -32,10 +32,10 @@ exports.uploadDocument = async (req, res) => {
 
     // 4. Background ingest (fire & forget)
     if (ext === ".docx") {
-      ingestDocx(req.file.path, jobId)
+      ingestDocx(req.file.path, jobId, req.file.originalname)
         .catch(err => console.error("DOCX ingest failed:", err));
     } else if (ext === ".pdf") {
-      ingestPdf(req.file.path, jobId)
+      ingestPdf(req.file.path, jobId, req.file.originalname)
         .catch(err => console.error("PDF ingest failed:", err));
     }
 
