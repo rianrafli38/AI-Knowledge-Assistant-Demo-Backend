@@ -40,6 +40,7 @@ async function retrieveContext(question, k = 5) {
  * Bangun prompt RAG dengan Chain of Thought dan Sitasi Hukum Ketat
  */
 function buildPrompt(contextChunks, question) {
+  console.log("🔍 Context Chunks:", contextChunks[0]);
   // Menggabungkan konten dengan menyuntikkan nama file asli (source) dan nomor halaman (page_number)
   const contextText = contextChunks
     .map((c) => {
