@@ -40,7 +40,6 @@ async function retrieveContext(question, k = 5) {
  * Bangun prompt RAG dengan Chain of Thought dan Sitasi Hukum Ketat
  */
 function buildPrompt(contextChunks, question) {
-  console.log("🔍 Context Chunks:", contextChunks[0]);
   // Menggabungkan konten dengan menyuntikkan nama file asli (source) dan nomor halaman (page_number)
   const contextText = contextChunks
     .map((c) => {
@@ -74,7 +73,9 @@ PANDUAN MENJAWAB (ANSWERING GUIDELINES):
 - JAWABAN MENDALAM & KOMPREHENSIF: Jangan memberikan jawaban ringkas, umum, atau normatif. Bedah setiap aspek hukum secara mendetail dan tajam.
 - SITASI HUKUM MUTLAK & KETAT: Setiap argumen, pasal, atau ayat yang kamu sebutkan WAJIB menyertakan dari dokumen mana informasi tersebut diambil berdasarkan tag DOKUMEN dan HALAMAN yang tertera di konteks.
   *DILARANG KERAS menggunakan label generik buatan sendiri seperti "[Sumber 1]", "[Sumber 2]", atau "[Sumber Z]".*
-  Contoh format sitasi yang benar: "...berdasarkan Pasal X Ayat Y (Nama_Undang_Undang.pdf, Halaman Z)..."
+  
+Contoh format sitasi yang benar: "...berdasarkan Pasal X Ayat Y ([NAMA_DOKUMEN_ASLI])..."
+PENTING: Ganti [NAMA_DOKUMEN_ASLI] dengan nama file asli yang tertera pada tag DOKUMEN di atas. Jangan pernah menulis teks template.
 - DETEKSI RISIKO & MITIGASI: Jika ada indikasi celah hukum, breakdown potensi kerugian, sanksi, atau risiko litigasi secara tajam, lalu berikan saran mitigasinya.
 - JIKA TIDAK ADA DI KONTEKS: Jika dokumen tidak memuat informasi spesifik yang dicari, katakan dengan tegas bahwa informasi tersebut tidak ditemukan dalam dokumen referensi yang tersedia. Jangan berasumsi atau membuat analogi hukum sendiri.
 `;
